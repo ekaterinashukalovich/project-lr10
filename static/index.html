@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mortgage Predictor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>🏦 Ипотечный скоринг</h1>
+    <p>Сервис предсказания одобрения ипотеки</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>📊 Предсказание для клиента</h2>
+      <form id="predict-form">
+        <label for="client-data">Данные клиента (JSON-массив):</label>
+        <textarea id="client-data" rows="6" placeholder='[{"age": 35, "income": 120000, "credit_score": 720, ...}]' required></textarea>
+        <button type="submit" class="btn primary">Предсказать</button>
+      </form>
+      <div id="predict-result" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>📦 Пакетное предсказание (CSV)</h2>
+      <form id="csv-form" enctype="multipart/form-data">
+        <label for="csv-file">Загрузите CSV:</label>
+        <input type="file" id="csv-file" accept=".csv" required>
+        <button type="submit" class="btn secondary">Загрузить и рассчитать</button>
+      </form>
+      <div id="csv-result" class="result"></div>
+    </section>
+
+    <section class="card admin">
+      <h2>🔧 Загрузка модели (ML Engineer)</h2>
+      <form id="model-form" enctype="multipart/form-data">
+        <label for="model-file">Файл модели (.pkl):</label>
+        <input type="file" id="model-file" accept=".pkl" required>
+        <button type="submit" class="btn warning">Загрузить модель</button>
+      </form>
+      <div id="model-result" class="result"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
