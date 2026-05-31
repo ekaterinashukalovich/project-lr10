@@ -3,44 +3,182 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mortgage Predictor</title>
+  <title>Mortgage AI Predictor</title>
   <link rel="stylesheet" href="/static/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="background-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+  </div>
+
   <header>
-    <h1>🏦 Ипотечный скоринг</h1>
-    <p>Сервис предсказания одобрения ипотеки</p>
+    <h1> Ипотечный скоринг</h1>
+    <p>Интеллектуальная оценка вероятности одобрения кредита</p>
   </header>
 
   <main>
-    <section class="card">
-      <h2>📊 Предсказание для клиента</h2>
+    <!-- Секция 1: Ввод данных клиента -->
+    <section class="card main-form">
+      <div class="card-header">
+        <h2> Данные клиента</h2>
+        <p>Заполните форму для получения предсказания</p>
+      </div>
+
       <form id="predict-form">
-        <label for="client-data">Данные клиента (JSON-массив):</label>
-        <textarea id="client-data" rows="6" placeholder='[{"age": 35, "income": 120000, "credit_score": 720, ...}]' required></textarea>
-        <button type="submit" class="btn primary">Предсказать</button>
+        <!-- Группа: Личные данные -->
+        <fieldset>
+          <legend>Личная информация</legend>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="person_age">Возраст (лет)</label>
+              <input type="number" id="person_age" min="18" max="100" required placeholder="30">
+            </div>
+            <div class="form-group">
+              <label for="person_gender">Пол</label>
+              <select id="person_gender" required>
+                <option value="M">Мужской</option>
+                <option value="F">Женский</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="person_education">Образование</label>
+              <select id="person_education" required>
+                <option value="Master">Магистр</option>
+                <option value="Bachelor">Бакалавр</option>
+                <option value="High School">Среднее</option>
+                <option value="Associate">Специальное</option>
+                <option value="Doctor">Доктор наук</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="person_income">Годовой доход ($)</label>
+              <input type="number" id="person_income" required placeholder="60000">
+            </div>
+            <div class="form-group">
+              <label for="person_emp_exp">Опыт работы (лет)</label>
+              <input type="number" id="person_emp_exp" min="0" required placeholder="5">
+            </div>
+            <div class="form-group">
+              <label for="person_home_ownership">Тип жилья</label>
+              <select id="person_home_ownership" required>
+                <option value="RENT">Аренда</option>
+                <option value="OWN">Собственность</option>
+                <option value="MORTGAGE">Ипотека</option>
+                <option value="OTHER">Другое</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Группа: Параметры кредита -->
+        <fieldset>
+          <legend>Параметры кредита</legend>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="loan_amnt">Сумма кредита ($)</label>
+              <input type="number" id="loan_amnt" required placeholder="15000">
+            </div>
+            <div class="form-group">
+              <label for="loan_intent">Цель кредита</label>
+              <select id="loan_intent" required>
+                <option value="EDUCATION">Образование</option>
+                <option value="MEDICAL">Медицина</option>
+                <option value="PERSONAL">Личные нужды</option>
+                <option value="VENTURE">Бизнес</option>
+                <option value="HOMEIMPROVEMENT">Ремонт</option>
+                <option value="DEBTCONSOLIDATION">Рефинансирование</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="loan_int_rate">Процентная ставка (%)</label>
+              <input type="number" id="loan_int_rate" step="0.01" min="0" max="100" required placeholder="12.5">
+            </div>
+            <div class="form-group">
+              <label for="loan_percent_income">Доля дохода на выплату (%)</label>
+              <input type="number" id="loan_percent_income" step="0.01" min="0" max="100" required placeholder="20">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Группа: Кредитная история -->
+        <fieldset>
+          <legend>Кредитная история</legend>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cb_person_cred_hist_length">Длина ист. (лет)</label>
+              <input type="number" id="cb_person_cred_hist_length" min="0" required placeholder="10">
+            </div>
+            <div class="form-group">
+              <label for="credit_score">Кредитный рейтинг (300-850)</label>
+              <input type="number" id="credit_score" min="300" max="850" required placeholder="720">
+            </div>
+            <div class="form-group">
+              <label for="previous_loan_defaults_on_file">Были ли дефолты?</label>
+              <select id="previous_loan_defaults_on_file" required>
+                <option value="No">Нет</option>
+                <option value="Yes">Да</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <button type="submit" class="btn primary">Рассчитать вероятность</button>
       </form>
-      <div id="predict-result" class="result"></div>
+
+      <div id="predict-result" class="result hidden"></div>
     </section>
 
-    <section class="card">
-      <h2>📦 Пакетное предсказание (CSV)</h2>
+    <!-- Секция 2: Загрузка CSV -->
+    <section class="card secondary">
+      <div class="card-header">
+        <h2>📊 Массовая обработка</h2>
+        <p>Загрузите CSV файл для анализа списка клиентов</p>
+      </div>
       <form id="csv-form" enctype="multipart/form-data">
-        <label for="csv-file">Загрузите CSV:</label>
-        <input type="file" id="csv-file" accept=".csv" required>
+        <div class="upload-area" id="drop-zone">
+          <input type="file" id="csv-file" accept=".csv" hidden required>
+          <label for="csv-file" class="upload-label">
+            <span class="upload-icon">📂</span>
+            <span class="upload-text">Нажмите для выбора или перетащите CSV</span>
+          </label>
+          <span id="file-name" class="file-name"></span>
+        </div>
         <button type="submit" class="btn secondary">Загрузить и рассчитать</button>
       </form>
-      <div id="csv-result" class="result"></div>
+      <div id="csv-result" class="result hidden"></div>
     </section>
 
+    <!-- Секция 3: Загрузка модели (Админ) -->
     <section class="card admin">
-      <h2>🔧 Загрузка модели (ML Engineer)</h2>
+      <div class="card-header">
+        <h2>🔧 Загрузка модели</h2>
+        <p>Для технических специалистов</p>
+      </div>
       <form id="model-form" enctype="multipart/form-data">
-        <label for="model-file">Файл модели (.pkl):</label>
         <input type="file" id="model-file" accept=".pkl" required>
-        <button type="submit" class="btn warning">Загрузить модель</button>
+        <button type="submit" class="btn warning">Загрузить .pkl модель</button>
       </form>
-      <div id="model-result" class="result"></div>
+      <div id="model-result" class="result hidden"></div>
+    </section>
+
+    <section class="card">
+        <h2>📈 Метрики сервиса</h2>
+        <div id="metrics-display">Загрузка...</div>
+        <script>
+            async function loadMetrics() {
+            const res = await fetch('/metrics');
+            const data = await res.json();
+            document.getElementById('metrics-display').innerHTML = `
+            <p>Всего запросов: ${data.total_requests}</p>
+            <p>Предсказаний: ${data.predictions_count}</p>
+            <p>Среднее время ответа: ${data.avg_response_time.toFixed(3)}с</p>
+            `;
+            }
+            setInterval(loadMetrics, 5000);
+            loadMetrics();
+        </script>
     </section>
   </main>
 

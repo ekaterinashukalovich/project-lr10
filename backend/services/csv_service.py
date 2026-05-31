@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
-from services.preprocess import FEATURE_COLUMNS, TARGET_COLUMN, preprocess
+from .preprocess import FEATURE_COLUMNS, TARGET_COLUMN, preprocess
 
 
 def process_csv_for_prediction(

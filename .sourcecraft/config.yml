@@ -1,0 +1,20 @@
+stages:
+  - name: lint
+    script:
+      - flake8 backend/ tests/
+      - black --check backend/ tests/
+
+  - name: test
+    script:
+      - pip install -r requirements.txt
+      - pytest tests/ -v
+
+  - name: build
+    script:
+      - docker build -t mortgage-service .
+
+  - name: deploy
+    script:
+      - docker-compose up -d
+    on:
+      branch: main
