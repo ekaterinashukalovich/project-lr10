@@ -49,9 +49,7 @@ def save_predictions(
 
     df["predicted_loan_status"] = predictions
 
-    df["predicted_loan_status_label"] = df[
-        "predicted_loan_status"
-    ].map(
+    df["predicted_loan_status_label"] = df["predicted_loan_status"].map(
         {
             1: "approved",
             0: "rejected",

@@ -13,7 +13,9 @@ from pydantic import BaseModel, ValidationError
 from pathlib import Path
 
 # Настройка логгера
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+LOG_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs"
+)
 os.makedirs(LOG_DIR, exist_ok=True)
 
 logger = logging.getLogger("mortgage_api")
@@ -21,8 +23,7 @@ logger.setLevel(logging.INFO)
 
 # Формат логов
 formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
 
 # Вывод в консоль
@@ -32,9 +33,7 @@ logger.addHandler(console_handler)
 
 # Вывод в файл с ротацией
 file_handler = RotatingFileHandler(
-    os.path.join(LOG_DIR, "app.log"),
-    maxBytes=10 * 1024 * 1024,
-    backupCount=3
+    os.path.join(LOG_DIR, "app.log"), maxBytes=10 * 1024 * 1024, backupCount=3
 )
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -59,6 +58,7 @@ from backend.services.validators import (
 
 class PredictRequest(BaseModel):
     """Модель входных данных клиента."""
+
     person_age: Optional[float] = None
     person_gender: str
     person_education: str
@@ -77,7 +77,7 @@ class PredictRequest(BaseModel):
 app = FastAPI(
     title="Mortgage Prediction Service",
     description="Сервис предсказания одобрения ипотеки",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Настройка путей
@@ -96,10 +96,7 @@ async def serve_frontend():
     index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return JSONResponse(
-        content={"error": "index.html not found"},
-        status_code=404
-    )
+    return JSONResponse(content={"error": "index.html not found"}, status_code=404)
 
 
 # CORS настройки
@@ -116,7 +113,7 @@ metrics = {
     "total_requests": 0,
     "predictions_count": 0,
     "avg_response_time": 0.0,
-    "errors": 0
+    "errors": 0,
 }
 
 
@@ -147,7 +144,7 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
     logger.error(f"Validation error: {exc.errors()}")
     return JSONResponse(
         status_code=422,
-        content={"detail": "Ошибка валидации данных", "errors": exc.errors()}
+        content={"detail": "Ошибка валидации данных", "errors": exc.errors()},
     )
 
 
@@ -161,10 +158,7 @@ async def get_metrics():
 async def health_check():
     """Проверка работоспособности сервиса"""
     logger.info("Health check requested")
-    return {
-        "status": "ok",
-        "model_loaded": is_model_loaded()
-    }
+    return {"status": "ok", "model_loaded": is_model_loaded()}
 
 
 @app.post("/upload-model")
@@ -175,11 +169,10 @@ async def upload_model(file: UploadFile = File(...)):
     try:
         validate_binary_file(file.content_type)
 
-        if not file.filename.endswith('.pkl'):
+        if not file.filename.endswith(".pkl"):
             logger.warning(f"Invalid file extension: {file.filename}")
             raise HTTPException(
-                status_code=400,
-                detail="Файл модели должен иметь расширение .pkl"
+                status_code=400, detail="Файл модели должен иметь расширение .pkl"
             )
 
         file_content = await file.read()
@@ -193,21 +186,20 @@ async def upload_model(file: UploadFile = File(...)):
         logger.info(f"Model '{file.filename}' uploaded successfully")
         return {
             "message": f"Model '{file.filename}' uploaded successfully.",
-            "status": "success"
+            "status": "success",
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error uploading model: {str(e)}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка при загрузке модели: {str(e)}"
+            status_code=500, detail=f"Ошибка при загрузке модели: {str(e)}"
         )
 
 
 @app.post("/predict/")
 async def predict_endpoint(
-        request: list[PredictRequest],
+    request: list[PredictRequest],
 ):
     """
     Выполняет предсказание для списка клиентов.
@@ -215,7 +207,7 @@ async def predict_endpoint(
     if not is_model_loaded():
         raise HTTPException(
             status_code=400,
-            detail="Модель не загружена. Загрузите модель через POST /upload-model"
+            detail="Модель не загружена. Загрузите модель через POST /upload-model",
         )
 
     df = pd.DataFrame([item.model_dump() for item in request])
@@ -224,8 +216,7 @@ async def predict_endpoint(
     missing_cols = set(FEATURE_COLUMNS) - set(processed_df.columns)
     if missing_cols:
         raise HTTPException(
-            status_code=400,
-            detail=f"Отсутствуют необходимые признаки: {missing_cols}"
+            status_code=400, detail=f"Отсутствуют необходимые признаки: {missing_cols}"
         )
 
     X = processed_df[FEATURE_COLUMNS]
@@ -234,7 +225,9 @@ async def predict_endpoint(
 
     result = df.copy()
     result["loan_status"] = predictions
-    result["loan_status_label"] = result["loan_status"].map({1: "approved", 0: "rejected"})
+    result["loan_status_label"] = result["loan_status"].map(
+        {1: "approved", 0: "rejected"}
+    )
 
     # Добавляем вероятность одобрения (второй элемент в списке вероятностей)
     result["probability_approved"] = [p[1] for p in probabilities]
@@ -254,7 +247,7 @@ async def predict_from_csv(file: UploadFile = File(...)):
             logger.warning("CSV prediction requested without loaded model")
             raise HTTPException(
                 status_code=400,
-                detail="Модель не загружена. Загрузите модель через POST /upload-model"
+                detail="Модель не загружена. Загрузите модель через POST /upload-model",
             )
 
         validate_csv_file(file.content_type)
@@ -275,17 +268,11 @@ async def predict_from_csv(file: UploadFile = File(...)):
         logger.error(f"Error during CSV prediction: {str(e)}")
         metrics["errors"] += 1
         raise HTTPException(
-            status_code=500,
-            detail=f"Ошибка при обработке CSV: {str(e)}"
+            status_code=500, detail=f"Ошибка при обработке CSV: {str(e)}"
         )
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "backend.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
