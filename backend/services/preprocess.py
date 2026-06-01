@@ -28,21 +28,6 @@ TARGET_COLUMN = "loan_status"
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     """
     Выполняет предобработку входного датафрейма.
-
-    Этапы обработки:
-    - удаление дубликатов;
-    - создание логарифмированных признаков;
-    - удаление неиспользуемых признаков;
-    - преобразование числовых колонок;
-    - удаление строк с пропущенными значениями.
-
-    Args:
-        df (pd.DataFrame):
-            Исходный датафрейм с данными клиентов.
-
-    Returns:
-        pd.DataFrame:
-            Предобработанный датафрейм.
     """
 
     df = df.copy()
@@ -54,6 +39,13 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
 
     if "loan_amnt" in df.columns:
         df["loan_amnt_log"] = np.log1p(df["loan_amnt"])
+
+    if "loan_percent_income" in df.columns:
+        df["loan_percent_income"] = pd.to_numeric(
+            df["loan_percent_income"],
+            errors="coerce"
+        )
+        df.loc[df["loan_percent_income"] > 1, "loan_percent_income"] /= 100
 
     if "person_age" in df.columns:
         df = df.drop(columns=["person_age"])
