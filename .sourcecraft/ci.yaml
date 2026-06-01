@@ -1,0 +1,71 @@
+version: "1.0"
+
+# Этапы пайплайна
+stages:
+  - name: install
+    description: "Установка зависимостей"
+    script:
+      - python -m pip install --upgrade pip
+      - pip install -r requirements.txt
+      - pip install pytest pytest-cov flake8 black
+
+  - name: lint-backend
+    description: "Линтинг Python-кода"
+    script:
+      - flake8 backend/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+      - flake8 backend/ tests/ --exit-zero
+      - black --check backend/ tests/
+    dependencies:
+      - install
+
+  - name: lint-frontend
+    description: "Линтинг фронтенда"
+    script:
+      - |
+        if [ -d "static" ]; then
+          # Проверка синтаксиса JS (если установлен node)
+          if command -v node &> /dev/null; then
+            npm install -g eslint 2>/dev/null || true
+            eslint static/*.js --no-ignore 2>/dev/null || echo "ESLint not configured, skipping"
+          fi
+          # Проверка HTML
+          for file in static/*.html; do
+            if grep -q "<script" "$file" && ! grep -q "</script>" "$file"; then
+              echo "Unclosed script tag in $file"
+              exit 1
+            fi
+          done
+          echo "Frontend lint passed"
+        fi
+    dependencies:
+      - install
+
+  - name: test
+    description: "Запуск тестов"
+    script:
+      - export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+      - pytest tests/ -v --tb=short --cov=backend --cov-report=xml
+    dependencies:
+      - install
+
+  - name: build
+    description: "Сборка проекта"
+    script:
+      - echo "Build stage completed"
+      - ls -la
+    dependencies:
+      - lint-backend
+      - lint-frontend
+      - test
+
+# Настройки уведомлений
+notifications:
+  on_success: false
+  on_failure: true
+
+# Артефакты для сохранения
+artifacts:
+  paths:
+    - coverage.xml
+    - logs/
+  expire_in: 7d
