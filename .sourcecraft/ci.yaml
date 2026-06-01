@@ -1,68 +1,100 @@
-stages:
-  - name: install
-    description: "Установка зависимостей"
-    script:
-      - python -m pip install --upgrade pip
-      - pip install -r requirements.txt
-      - pip install pytest pytest-cov flake8 black
+on:
+  push:
+    - workflows: [ci-pipeline]
+      filter:
+        branches:
+          - main
+          - integration/merge-all
+        paths:
+          - "backend/**"
+          - "tests/**"
+          - "requirements.txt"
+          - ".sourcecraft/ci.yaml"
+  
+  pull_request:
+    - workflows: [ci-pipeline]
+      filter:
+        source_branches:
+          - "feature/**"
+        target_branches:
+          - main
+        paths:
+          - "backend/**"
+          - "tests/**"
+          - "requirements.txt"
 
-  - name: lint-backend
-    description: "Линтинг Python-кода"
-    script:
-      - flake8 backend/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-      - flake8 backend/ tests/ --exit-zero
-      - black --check backend/ tests/
-    dependencies:
-      - install
+workflows:
+  ci-pipeline:
+    tasks:
+      - name: install-dependencies
+        cubes:
+          - name: python-env
+            image: python:3.11-slim
+            script:
+              - python -m pip install --upgrade pip
+              - pip install -r requirements.txt
+              - pip install pytest pytest-cov flake8 black httpx
 
-  - name: lint-frontend
-    description: "Линтинг фронтенда"
-    script:
-      - |
-        if [ -d "static" ]; then
-          # Проверка синтаксиса JS (если установлен node)
-          if command -v node &> /dev/null; then
-            npm install -g eslint 2>/dev/null || true
-            eslint static/*.js --no-ignore 2>/dev/null || echo "ESLint not configured, skipping"
-          fi
-          # Проверка HTML
-          for file in static/*.html; do
-            if grep -q "<script" "$file" && ! grep -q "</script>" "$file"; then
-              echo "Unclosed script tag in $file"
-              exit 1
-            fi
-          done
-          echo "Frontend lint passed"
-        fi
-    dependencies:
-      - install
+      - name: lint-backend
+        cubes:
+          - name: python-lint
+            image: python:3.11-slim
+            script:
+              - pip install -r requirements.txt
+              - pip install flake8 black
+              - flake8 backend/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+              - flake8 backend/ tests/ --exit-zero
+              - black --check backend/ tests/
+        
+      - name: lint-frontend
+        cubes:
+          - name: node-lint
+            image: node:18-slim
+            script:
+              - |
+                if [ -d "static" ]; then
+                  echo "Checking frontend files..."
+                  for file in static/*.html; do
+                    if [ -f "$file" ]; then
+                      if grep -q "<script" "$file" && ! grep -q "</script>" "$file"; then
+                        echo "Unclosed script tag in $file"
+                        exit 1
+                      fi
+                    fi
+                  done
+                  for file in static/*.css; do
+                    if [ -f "$file" ]; then
+                      if grep -q "{[^}]*$" "$file"; then
+                        echo "Possible unclosed brace in $file"
+                      fi
+                    fi
+                  done
+                  echo "Frontend syntax check passed"
+                else
+                  echo "static/ directory not found, skipping frontend lint"
+                fi
 
-  - name: test
-    description: "Запуск тестов"
-    script:
-      - export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-      - pytest tests/ -v --tb=short --cov=backend --cov-report=xml
-    dependencies:
-      - install
+      - name: run-tests
+        cubes:
+          - name: python-test
+            image: python:3.11-slim
+            script:
+              - pip install -r requirements.txt
+              - pip install pytest pytest-cov httpx
+              - export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+              - pytest tests/ -v --tb=short --cov=backend --cov-report=xml --cov-report=term
+              - echo "Tests completed"
 
-  - name: build
-    description: "Сборка проекта"
-    script:
-      - echo "Build stage completed"
-      - ls -la
-    dependencies:
-      - lint-backend
-      - lint-frontend
-      - test
-
-# Настройки уведомлений
-notifications:
-  on_success: false
-  on_failure: true
-
-# Артефакты для сохранения
-artifacts:
-  paths:
-    - coverage.xml
-    - logs/
-  expire_in: 7d
+      - name: build-check
+        cubes:
+          - name: python-build
+            image: python:3.11-slim
+            script:
+              - pip install -r requirements.txt
+              - echo "Checking project structure..."
+              - test -d backend/ || (echo "backend/ not found" && exit 1)
+              - test -f backend/main.py || (echo "backend/main.py not found" && exit 1)
+              - test -d static/ || echo "⚠static/ not found"
+              - test -f requirements.txt || (echo "requirements.txt not found" && exit 1)
+              - echo "Build check passed"
+              - ls -la
