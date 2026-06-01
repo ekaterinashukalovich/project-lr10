@@ -1,6 +1,10 @@
 import pytest
+import sys
 from fastapi.testclient import TestClient
 from backend.main import app
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 client = TestClient(app)
 

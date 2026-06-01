@@ -9,3 +9,7 @@
 2026-06-01 02:09:17 - mortgage_api - INFO - Model 'best_mortgage_model.pkl' uploaded successfully
 2026-06-01 02:09:21 - mortgage_api - INFO - CSV prediction request received
 2026-06-01 02:09:21 - mortgage_api - INFO - CSV prediction completed: 45000 results
+2026-06-01 03:17:48 - mortgage_api - INFO - Model upload requested: best_mortgage_model.pkl
+2026-06-01 03:17:48 - mortgage_api - INFO - Model 'best_mortgage_model.pkl' uploaded successfully
+2026-06-01 03:17:51 - mortgage_api - INFO - CSV prediction request received
+2026-06-01 03:17:51 - mortgage_api - INFO - CSV prediction completed: 45000 results
