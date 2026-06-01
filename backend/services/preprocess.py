@@ -42,8 +42,7 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
 
     if "loan_percent_income" in df.columns:
         df["loan_percent_income"] = pd.to_numeric(
-            df["loan_percent_income"],
-            errors="coerce"
+            df["loan_percent_income"], errors="coerce"
         )
         df.loc[df["loan_percent_income"] > 1, "loan_percent_income"] /= 100
 
